@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Authenticating...</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="container">
+      <p id="msg">Authenticating with Spotify...</p>
+    </div>
+    <script>
+      const CLIENT_ID = "5ae954a9c9e54a41bf4a4f8566c1a65b";
+      const DEV = true;
+      const REDIRECT_URI = DEV
+        ? "http://127.0.0.1:5500/callback.html"
+        : "https://mja129.github.io/theeaglesandmacdemarco/callback.html";
+      const HOME = DEV
+        ? "http://127.0.0.1:5500/"
+        : "https://mja129.github.io/theeaglesandmacdemarco/";
+
+      async function handleCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const error = params.get("error");
+
+        if (error || !code) {
+          document.getElementById("msg").textContent =
+            "Authentication failed: " + (error || "no code received");
+          return;
+        }
+
+        const verifier = localStorage.getItem("code_verifier");
+        if (!verifier) {
+          document.getElementById("msg").textContent =
+            "Authentication failed: missing code verifier. Please try logging in again.";
+          return;
+        }
+
+        const res = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: CLIENT_ID,
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: REDIRECT_URI,
+            code_verifier: verifier,
+          }),
+        });
+
+        if (!res.ok) {
+          document.getElementById("msg").textContent =
+            "Token exchange failed. Please try logging in again.";
+          return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem("spotify_token", data.access_token);
+        localStorage.setItem(
+          "spotify_token_expiry",
+          Date.now() + data.expires_in * 1000
+        );
+        localStorage.removeItem("code_verifier");
+
+        window.location.href = HOME;
+      }
+
+      handleCallback();
+    </script>
+  </body>
+</html>
