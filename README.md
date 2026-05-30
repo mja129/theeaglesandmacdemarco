@@ -1,0 +1,1 @@
+A website specifically for when you want to make a playlist consisting of the Eagles and Mac Demarco (or any other set of artists)
